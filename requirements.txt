@@ -1,0 +1,21 @@
+# open_clip core dependencies (from mlfoundations/open_clip requirements.txt)
+torch>=2.6
+torchvision
+regex
+ftfy
+tqdm
+huggingface_hub
+safetensors
+timm>=1.0.30
+tiktoken
+
+# Needed for SigLIP models (they use Hugging Face tokenizers)
+transformers[sentencepiece]
+
+# Data handling, evaluation and plotting (also used by Benchmark/EfficientNet.ipynb)
+numpy
+pandas
+pillow
+scikit-learn
+matplotlib
+certifi
