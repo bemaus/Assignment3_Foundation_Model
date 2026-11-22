@@ -1,0 +1,447 @@
+# Text prompts for each class: 20 per class.
+#
+#   Set 1 (10 prompts):  specific        8  target-specific descriptions
+#                        general         2  generic templates
+#   Set 2 (10 prompts):  social          8  social-media style captions
+#                        social_general  2  generic templates
+#
+# So each set of 10 is 80% specific (or social) and 20% general.
+#
+# - `name` is the readable class name that replaces {} in a prompt. Prompts without {}
+#   (common in the social captions) are used as written.
+# - Keys must match the folder names in data/train and data/test.
+# - Every class except Flower is a grayscale photo, so those prompts avoid color words.
+# - The config's `prompt_groups` picks which groups are used, for example
+#   [specific, general] to reproduce the original 10-prompt setup.
+
+Bedroom:
+  name: bedroom
+  specific:
+    - "a {} with a large bed and pillows"
+    - "a cozy {} with a bed and nightstands"
+    - "a hotel {} with a made bed"
+    - "a {} with a bed, a lamp and curtains"
+    - "the interior of a {} with a double bed"
+    - "a tidy {} with a bed against the wall"
+    - "a small {} with a bed and a window"
+    - "a {} with a headboard and blankets on the bed"
+  social:
+    - "finally finished redecorating my {}, so ready to sleep in"
+    - "hotel room for the weekend, this bed is huge"
+    - "lazy sunday, not leaving this bed today"
+    - "new sheets, new pillows, best {} glow up ever"
+    - "our airbnb {} is so cozy"
+    - "made my bed for once, had to take a picture"
+    - "the guest {} is ready for visitors"
+    - "minimalist {} goals, just a bed and a nightstand"
+  general:
+    - "a photo of a {}"
+    - "a black and white photo of a {}"
+  social_general:
+    - "an image of a {}"
+    - "a picture of a {}"
+
+Coast:
+  name: coast
+  specific:
+    - "a {} with waves and a sandy beach"
+    - "a rocky {} next to the ocean"
+    - "the sea meeting the {} at the horizon"
+    - "a calm {} with water and sky"
+    - "a {} with cliffs above the sea"
+    - "a beach on the {} with gentle waves"
+    - "a wide view of the ocean along the {}"
+    - "a {} with the shoreline and open water"
+  social:
+    - "beach day! nothing beats the sound of the waves"
+    - "road trip along the {}, the ocean views are unreal"
+    - "watching the waves crash on the rocks"
+    - "sand between my toes and the sea in front of me"
+    - "found a quiet beach with nobody around"
+    - "morning walk along the shore before the crowds"
+    - "the ocean was so calm today"
+    - "cliffs, waves and fresh sea air on the {}"
+  general:
+    - "a photo of a {}"
+    - "a black and white photo of a {}"
+  social_general:
+    - "an image of a {}"
+    - "a picture of a {}"
+
+Flower:
+  name: flower
+  specific:
+    - "a close-up photo of a colorful {}"
+    - "a {} with bright petals"
+    - "a blooming {} in a garden"
+    - "a macro photo of a {} and its petals"
+    - "a single {} with green leaves"
+    - "a {} with pink, red or yellow petals"
+    - "a vivid {} in full bloom"
+    - "the center of a {} surrounded by petals"
+  social:
+    - "my garden is finally blooming, look at this {}"
+    - "spring is here and the flowers are everywhere"
+    - "got close to this beautiful bloom on my walk"
+    - "the colors on these petals are unreal"
+    - "stopped to smell the roses today"
+    - "macro shot of a {} from the park"
+    - "my plant finally flowered after months of waiting"
+    - "so many bright blossoms at the botanical garden"
+  general:
+    - "a photo of a {}"
+    - "an image of a {}"
+  social_general:
+    - "a picture of a {}"
+    - "a close-up of a {}"
+
+Forest:
+  name: forest
+  specific:
+    - "a dense {} full of tall trees"
+    - "tree trunks in a thick {}"
+    - "a {} with leafy branches and undergrowth"
+    - "a path through a {}"
+    - "the inside of a {} with many trees"
+    - "a {} of pine trees"
+    - "sunlight through the trees in a {}"
+    - "a wild {} with trees close together"
+  social:
+    - "lost in the woods and loving it"
+    - "hiking through the {} this morning, so peaceful"
+    - "surrounded by trees, no signal, no problem"
+    - "forest bathing is real, feeling so calm"
+    - "the trees out here are so tall"
+    - "weekend hike deep into the {}"
+    - "nature walk under the trees today"
+    - "camping in the woods this weekend"
+  general:
+    - "a photo of a {}"
+    - "a black and white photo of a {}"
+  social_general:
+    - "an image of a {}"
+    - "a picture of a {}"
+
+Highway:
+  name: highway
+  specific:
+    - "a {} with cars driving on it"
+    - "a multi-lane {} stretching into the distance"
+    - "a {} with road markings and traffic"
+    - "an empty {} through the countryside"
+    - "a {} with an overpass and road signs"
+    - "a long straight {} with lanes"
+    - "a busy {} seen from the driver's view"
+    - "a {} with a guardrail along the road"
+  social:
+    - "road trip! 300 miles to go on this {}"
+    - "stuck in traffic on the {} again"
+    - "open road, good music, no plans"
+    - "driving the interstate all day"
+    - "the {} is empty this early in the morning"
+    - "long drive home, these lanes never end"
+    - "cruising down the freeway on a sunday"
+    - "passenger seat view of the {}"
+  general:
+    - "a photo of a {}"
+    - "a black and white photo of a {}"
+  social_general:
+    - "an image of a {}"
+    - "a picture of a {}"
+
+Industrial:
+  name: industrial site
+  specific:
+    - "an {} with factories and smokestacks"
+    - "a factory at an {}"
+    - "an {} with large metal structures"
+    - "a power plant at an {}"
+    - "an {} with warehouses and machinery"
+    - "chimneys and pipes at an {}"
+    - "a refinery at an {}"
+    - "an {} with cranes and storage tanks"
+  social:
+    - "urban exploring at an old factory today"
+    - "the smokestacks on my commute every morning"
+    - "abandoned warehouse photoshoot, love the gritty look"
+    - "visited the old power plant, the scale is insane"
+    - "industrial vibes at the shipping yard"
+    - "first day on the job at the plant"
+    - "pipes and steel everywhere at this {}"
+    - "the refinery looks so eerie at dusk"
+  general:
+    - "a photo of an {}"
+    - "a black and white photo of an {}"
+  social_general:
+    - "an image of an {}"
+    - "a picture of an {}"
+
+InsideCity:
+  name: city center
+  specific:
+    - "a {} with old buildings close together"
+    - "a narrow street in a {}"
+    - "building facades with many windows in a {}"
+    - "a busy {} with shops and buildings"
+    - "a {} street lined with apartment buildings"
+    - "the downtown area of a {}"
+    - "a historic {} with stone buildings"
+    - "a crowded {} with houses side by side"
+  social:
+    - "exploring downtown today, love these old buildings"
+    - "wandering the old town, every corner is beautiful"
+    - "city break! the architecture here is amazing"
+    - "walking through the {} on vacation"
+    - "these old apartment buildings have so much character"
+    - "getting lost in the narrow streets of the old city"
+    - "europe trip, the downtown is so charming"
+    - "sightseeing in the historic {}"
+  general:
+    - "a photo of a {}"
+    - "a black and white photo of a {}"
+  social_general:
+    - "an image of a {}"
+    - "a picture of a {}"
+
+Kitchen:
+  name: kitchen
+  specific:
+    - "a {} with cabinets and a countertop"
+    - "a {} with a stove and an oven"
+    - "a {} with a sink and a refrigerator"
+    - "a modern {} with appliances"
+    - "a {} with a kitchen island"
+    - "a home {} with pots and pans"
+    - "a {} with tiled walls and cupboards"
+    - "the interior of a {} with a dining table"
+  social:
+    - "our {} remodel is finally done!"
+    - "cooking dinner tonight in the new {}"
+    - "new countertops and cabinets, obsessed"
+    - "sunday baking session, the oven is on"
+    - "dream {} goals right here"
+    - "meal prep day, the counters are full"
+    - "cleaned the whole {} top to bottom"
+    - "the island in our new apartment is perfect for cooking"
+  general:
+    - "a photo of a {}"
+    - "a black and white photo of a {}"
+  social_general:
+    - "an image of a {}"
+    - "a picture of a {}"
+
+LivingRoom:
+  name: living room
+  specific:
+    - "a {} with a sofa and a coffee table"
+    - "a cozy {} with armchairs"
+    - "a {} with a couch and a television"
+    - "a {} with a fireplace"
+    - "a furnished {} with lamps and cushions"
+    - "a {} with a rug and a sofa"
+    - "the interior of a {} with large windows"
+    - "a family {} with comfortable seating"
+  social:
+    - "movie night on the couch, so cozy"
+    - "finally got the new sofa set up"
+    - "{} makeover complete, what do you think?"
+    - "fireplace on and a blanket on the couch"
+    - "rearranged the furniture again, loving this layout"
+    - "home tour: our {}"
+    - "lazy evening on the sofa with a good book"
+    - "new rug and pillows changed the whole {}"
+  general:
+    - "a photo of a {}"
+    - "a black and white photo of a {}"
+  social_general:
+    - "an image of a {}"
+    - "a picture of a {}"
+
+Mountain:
+  name: mountain
+  specific:
+    - "a tall {} with a rocky peak"
+    - "a snow-capped {}"
+    - "a {} range under the sky"
+    - "a steep {} with cliffs"
+    - "a {} landscape with valleys"
+    - "the summit of a {}"
+    - "a {} rising above the clouds"
+    - "a rugged {} with slopes"
+  social:
+    - "made it to the summit! worth every step"
+    - "the {} views on this hike are unreal"
+    - "snow on the peaks already"
+    - "hiking up the {} this weekend"
+    - "can't believe how big these mountains are"
+    - "sunrise over the peaks from our campsite"
+    - "ski trip to the mountains, the slopes look amazing"
+    - "climbing season is here"
+  general:
+    - "a photo of a {}"
+    - "a black and white photo of a {}"
+  social_general:
+    - "an image of a {}"
+    - "a picture of a {}"
+
+Office:
+  name: office
+  specific:
+    - "an {} with desks and computers"
+    - "an {} with a desk, a chair and a monitor"
+    - "a workspace in an {}"
+    - "an {} with shelves and files"
+    - "a small {} with a computer on a desk"
+    - "a cubicle in an {}"
+    - "an {} with office chairs and a table"
+    - "the interior of an {} with a keyboard and a screen"
+  social:
+    - "first day at the new job, here's my desk"
+    - "monday mornings at the {}"
+    - "my work from home setup is finally complete"
+    - "late night at the {} trying to meet a deadline"
+    - "new monitor, new keyboard, productivity mode on"
+    - "desk setup tour"
+    - "back in the {} after vacation"
+    - "cubicle life"
+  general:
+    - "a photo of an {}"
+    - "a black and white photo of an {}"
+  social_general:
+    - "an image of an {}"
+    - "a picture of an {}"
+
+OpenCountry:
+  name: open country
+  specific:
+    - "a big, wide {} with fields"
+    - "flat {} stretching to the horizon"
+    - "{} with grassland and a wide sky"
+    - "rolling hills in the {}"
+    - "{} with empty fields and a few bushes"
+    - "a wide landscape of {}"
+    - "{} with meadows and no buildings"
+    - "a dirt road through the {}"
+  social:
+    - "took my dog to this beautiful, open, big field"
+    - "nothing but fields for miles out here"
+    - "country drive, just grass and sky"
+    - "middle of nowhere and loving the quiet"
+    - "wide open spaces, no buildings in sight"
+    - "the prairie goes on forever"
+    - "picnic in the meadow this afternoon"
+    - "rural road trip through the {}"
+  general:
+    - "an image of {}"
+    - "a black and white photo of {}"
+  social_general:
+    - "a photo of {}"
+    - "a picture of {}"
+
+Store:
+  name: store
+  specific:
+    - "the inside of a {} with shelves of products"
+    - "a {} aisle with goods on display"
+    - "a grocery {} with shelves"
+    - "a {} with racks of clothes"
+    - "a shop counter inside a {}"
+    - "a supermarket {} with stocked shelves"
+    - "a retail {} with merchandise"
+    - "a small {} with items for sale"
+  social:
+    - "grocery run, the shelves are fully stocked"
+    - "shopping spree at my favorite {}"
+    - "this little shop has everything"
+    - "browsing the aisles for way too long"
+    - "new {} just opened downtown, so many products"
+    - "picking up snacks at the corner shop"
+    - "window shopping turned into real shopping"
+    - "clothing racks for days at the mall"
+  general:
+    - "a photo of a {}"
+    - "a black and white photo of a {}"
+  social_general:
+    - "an image of a {}"
+    - "a picture of a {}"
+
+Street:
+  name: street
+  specific:
+    - "a {} with cars and sidewalks"
+    - "a city {} with traffic"
+    - "a {} lined with parked cars"
+    - "a {} with street lights and buildings on both sides"
+    - "a residential {} with houses"
+    - "a {} with a crosswalk"
+    - "a long {} seen from the road"
+    - "a quiet {} with trees and cars"
+  social:
+    - "walking down my {} this morning"
+    - "the traffic on this {} is crazy"
+    - "street photography in the city today"
+    - "crossing the road on my commute"
+    - "quiet {} after the rain"
+    - "cars parked all along the curb, good luck finding a spot"
+    - "my neighborhood {} at night"
+    - "the sidewalks are packed downtown"
+  general:
+    - "a photo of a {}"
+    - "a black and white photo of a {}"
+  social_general:
+    - "an image of a {}"
+    - "a picture of a {}"
+
+Suburb:
+  name: suburb
+  specific:
+    - "a house in a {} with a front yard"
+    - "a {} with family homes and lawns"
+    - "a residential {} with detached houses"
+    - "a {} house with a driveway"
+    - "a quiet {} with trees and houses"
+    - "a two-story home in a {}"
+    - "a {} neighborhood with gardens"
+    - "a single-family house in the {}"
+  social:
+    - "we just bought our first house!"
+    - "mowed the front lawn, looking good"
+    - "home sweet home in the {}"
+    - "quiet {} life, i could get used to this"
+    - "our new neighborhood is so peaceful"
+    - "the house with the picket fence is finally ours"
+    - "evening walk around the neighborhood"
+    - "curb appeal on point after painting the house"
+  general:
+    - "a photo of a {}"
+    - "a black and white photo of a {}"
+  social_general:
+    - "an image of a {}"
+    - "a picture of a {}"
+
+TallBuilding:
+  name: tall building
+  specific:
+    - "a {} with many floors"
+    - "a skyscraper, a very {}"
+    - "a {} reaching into the sky"
+    - "a {} with rows of windows"
+    - "looking up at a {}"
+    - "a modern {} made of glass and steel"
+    - "a {} in a city skyline"
+    - "a {} towering over the street"
+  social:
+    - "neck hurts from looking up at this skyscraper"
+    - "the city skyline from below"
+    - "my office is on the 40th floor of this {}"
+    - "skyscrapers everywhere in this city"
+    - "glass towers reflecting the sky"
+    - "visited the tallest building in town"
+    - "concrete jungle, these towers are massive"
+    - "looking up at the {} downtown"
+  general:
+    - "a photo of a {}"
+    - "a black and white photo of a {}"
+  social_general:
+    - "an image of a {}"
+    - "a picture of a {}"

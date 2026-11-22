@@ -15,17 +15,10 @@ import torch
 from .convert import convert_state_dict
 from .model import CLIP, CustomTextCLIP, convert_weights_to_lp, convert_to_custom_text_state_dict,\
     resize_pos_embed, get_cast_dtype, resize_text_pos_embed, set_model_preprocess_cfg
-from .clap_model import CLAP
-from .coca_model import CoCa
-from .mammut_model import MaMMUT
-from .naflex_genlip_model import NaFlexGenLip
-from .naflex_genlap_model import NaFlexGenLap
-from .loss import ClipLoss, DistillClipLoss, CoCaLoss, SigLipLoss, GenLipLoss
 from .model_traits import (
     InputMode, ModelFamily, get_model_traits, traits_from_config, traits_from_model,
     validate_distillation,
 )
-from .naflex_convert import apply_naflex_vision_config, convert_naflex_state_dict
 from .pretrained import get_pretrained_cfg, download_pretrained,\
     list_pretrained_tags_by_model, download_pretrained_from_hf
 from .transform import (
@@ -269,7 +262,6 @@ def load_checkpoint(
 
     # Detect & convert 3rd party state_dicts -> open_clip
     state_dict = convert_state_dict(model, state_dict)
-    state_dict = convert_naflex_state_dict(model, state_dict)
 
     # Detect old format and make compatible with new format
     if 'positional_embedding' in state_dict and not hasattr(model, 'positional_embedding'):
@@ -536,12 +528,7 @@ def create_model(
         if force_naflex_patch_interp:
             vision_cfg["naflex_patch_interp"] = True
         if force_naflex_vision:
-            pre_traits = traits_from_config(model_cfg)
-            if pre_traits.requires_naflex_data or pre_traits.image_input is InputMode.NONE:
-                # NaFlex-native (GenLIP embed) or no vision tower (GenLAP): nothing to convert.
-                _logger.info(f"force_naflex_vision is a no-op for {pre_traits.family.value} models.")
-            else:
-                apply_naflex_vision_config(model_cfg)
+            raise ValueError("NaFlex support was removed from this trimmed copy of open_clip.")
     if force_context_length is not None:
         text_cfg["context_length"] = force_context_length
         if "multimodal_cfg" in model_cfg:
@@ -590,27 +577,17 @@ def create_model(
 
     # Share config-family classification with tokenizer validation and trait prediction.
     family = traits_from_config(model_cfg).family
-    if family in (ModelFamily.GENLIP, ModelFamily.GENLAP):
-        model_cfg.pop('custom_text', None)
-        model_class = NaFlexGenLip if family is ModelFamily.GENLIP else NaFlexGenLap
-    elif family is ModelFamily.CLAP:
-        model_class = CLAP
-    else:
-        custom_text_requested = model_cfg.pop('custom_text', False)
-        custom_text = (
-            custom_text_requested or force_custom_text or is_hf_text_model or
-            is_modern_text_model or is_variable_text_model
+    if family is not ModelFamily.CLIP:   # SigLIP models are CLIP-family too
+        raise ValueError(
+            f"{family.value} models (CoCa, MaMMUT, CLAP, GenLIP, ...) were removed from this trimmed copy of open_clip; "
+            "only CLIP-style image-text models are supported."
         )
-        if family is ModelFamily.MAMMUT:
-            # single text decoder serving both contrastive & caption passes
-            model_class = MaMMUT
-        elif custom_text:
-            if family is ModelFamily.COCA:
-                model_class = CoCa
-            else:
-                model_class = CustomTextCLIP
-        else:
-            model_class = CLIP
+    custom_text_requested = model_cfg.pop('custom_text', False)
+    custom_text = (
+        custom_text_requested or force_custom_text or is_hf_text_model or
+        is_modern_text_model or is_variable_text_model
+    )
+    model_class = CustomTextCLIP if custom_text else CLIP
 
     # Strip removed legacy kwargs that external callers may still pass
     if 'jit' in model_kwargs:
@@ -640,25 +617,15 @@ def create_model(
     pretrained_loaded = False
     if checkpoint_path:
         _logger.info(f'Loading full pretrained weights from: {checkpoint_path}')
-        if pretrained_cfg_for_tag and pretrained_cfg_for_tag.get('hf_transformers_clap', False):
-            from .audio.convert import load_hf_clap_state_dict
-
-            state_dict = load_hf_clap_state_dict(checkpoint_path)
-            incompatible_keys = model.load_state_dict(state_dict, strict=False)
-            _logger.info(
-                f"Loaded Transformers CLAP checkpoint from {checkpoint_path}. "
-                f"Incompatible keys: {incompatible_keys}"
-            )
-        else:
-            # Use the load_checkpoint helper which handles state dict loading, conversions, etc.
-            # Use strict=True by default for full model loading to catch mismatches.
-            load_checkpoint(
-                model,
-                checkpoint_path,
-                strict=True,
-                weights_only=weights_only,
-                device='cpu' # Load to CPU first
-            )
+        # Use the load_checkpoint helper which handles state dict loading, conversions, etc.
+        # Use strict=True by default for full model loading to catch mismatches.
+        load_checkpoint(
+            model,
+            checkpoint_path,
+            strict=True,
+            weights_only=weights_only,
+            device='cpu' # Load to CPU first
+        )
         pretrained_loaded = True
 
     # Load tower-specific weights (image and text), after the full CLIP checkpoint, potentially overwriting parts.
@@ -1049,168 +1016,6 @@ def _set_model_device_and_precision(
         model.to(device=device)
 
 
-def _use_loss_label_cache(args):
-    # Task/step compile captures the loss module. Avoid mutable label-cache
-    # state inside compiled regions; arange is cheap enough.
-    return not (
-        getattr(args, "torchcompile", False)
-        and getattr(args, "torchcompile_strategy", "task") in ("task", "step")
-    )
-
-
-_UNSET_PAD_ID = object()
-
-
-def create_loss(
-        loss_type: str,
-        *,
-        local_loss: bool = False,
-        gather_with_grad: bool = False,
-        cache_labels: bool = False,
-        rank: int = 0,
-        world_size: int = 1,
-        caption_loss_weight: float = 2.0,
-        clip_loss_weight: float = 1.0,
-        pad_id=_UNSET_PAD_ID,
-        z_loss_weight: float = 0.0,
-        compute_dtype: Union[str, torch.dtype] = torch.float32,
-        ignore_index: int = -100,
-        dist_impl: Optional[str] = None,
-        chunk_size: int = 0,
-):
-    """Construct a standalone loss from explicit options, without a model or training namespace.
-
-    Args:
-        loss_type: ``"clip"``, ``"distill_clip"``, ``"siglip"``, ``"coca"`` (also MaMMUT), or
-            ``"genlip"`` (also GenLAP). These select loss contracts, not model architectures.
-        local_loss: Compute local contrastive logits for clip, distill_clip, or coca.
-        gather_with_grad: Gather contrastive features with gradients for those same losses.
-        cache_labels: Cache contrastive labels; disable when compiling a region containing the loss.
-        rank: Distributed rank for contrastive losses.
-        world_size: Distributed world size for contrastive losses.
-        caption_loss_weight: Caption CE weight for coca.
-        clip_loss_weight: Contrastive weight for coca.
-        pad_id: Required explicitly for coca: an integer for raw labels, or ``None`` for labels
-            already masked to -100. The loss never infers a tokenizer's padding convention.
-        z_loss_weight: Caption z-loss weight for coca or genlip.
-        compute_dtype: Caption compute dtype for coca or genlip (``"float32"``, ``"model"``, or a dtype).
-        ignore_index: Masked label value for genlip. CoCa always uses -100, plus pad_id when supplied.
-        dist_impl: Distributed exchange implementation for siglip.
-        chunk_size: SigLIP logits chunk size (0 disables chunking).
-
-    Non-default options that do not apply to the selected loss raise ValueError. Caption logits and
-    labels must already be aligned for next-token prediction. The legacy trainer uses
-    ``open_clip_train.loss.create_loss_from_args`` to translate its model and CLI settings.
-    """
-    distributed = ("cache_labels", "rank", "world_size")
-    contrastive = distributed + ("local_loss", "gather_with_grad")
-    caption = ("z_loss_weight", "compute_dtype")
-    specs = {
-        "clip": (ClipLoss, contrastive),
-        "distill_clip": (DistillClipLoss, contrastive),
-        "siglip": (SigLipLoss, distributed + ("dist_impl", "chunk_size")),
-        "coca": (CoCaLoss, contrastive + caption + ("caption_loss_weight", "clip_loss_weight", "pad_id")),
-        "genlip": (GenLipLoss, caption + ("ignore_index",)),
-    }
-    if loss_type not in specs:
-        raise ValueError(f"Unknown loss_type {loss_type!r}; expected one of {', '.join(specs)}.")
-    loss_class, supported = specs[loss_type]
-    if compute_dtype == "float32":
-        compute_dtype = torch.float32
-    # Pair each supplied value with its neutral default; the same spec validates and forwards options.
-    options = dict(
-        local_loss=(local_loss, False),
-        gather_with_grad=(gather_with_grad, False),
-        cache_labels=(cache_labels, False),
-        rank=(rank, 0),
-        world_size=(world_size, 1),
-        caption_loss_weight=(caption_loss_weight, 2.0),
-        clip_loss_weight=(clip_loss_weight, 1.0),
-        pad_id=(pad_id, _UNSET_PAD_ID),
-        z_loss_weight=(z_loss_weight, 0.0),
-        compute_dtype=(compute_dtype, torch.float32),
-        ignore_index=(ignore_index, -100),
-        dist_impl=(dist_impl, None),
-        chunk_size=(chunk_size, 0),
-    )
-    unsupported = [name for name, (value, default) in options.items() if name not in supported and value != default]
-    if unsupported:
-        raise ValueError(f"Options not supported for {loss_type}: {', '.join(unsupported)}.")
-    if loss_type == "coca" and pad_id is _UNSET_PAD_ID:
-        raise ValueError("coca requires explicit pad_id: an integer for raw labels, or None for -100 masked labels.")
-    return loss_class(**{name: options[name][0] for name in supported})
-
-
-def create_task(args, model, dist_model=None, naflex_data_config=None):
-    """Create a training task wrapping model + loss.
-
-    The task constructs its own loss internally from the provided args.
-    Loss type is determined by the task class (CLIPTask -> ClipLoss, etc.).
-
-    Args:
-        args: Training arguments (must have model, distill, siglip, etc.).
-        model: The CLIP model.
-        dist_model: Optional teacher model for distillation.
-        naflex_data_config: Optional resolved NaFlex data policy.
-
-    Returns:
-        A TrainingTask subclass instance.
-    """
-    from .task import CLIPTask, SigLIPTask, CoCaTask, GenLipTask, GenLapTask, DistillCLIPTask, CLAPTask, unwrap_model
-
-    model_unwrapped = unwrap_model(model)
-    if args.distill:
-        validate_distillation(get_model_traits(model_unwrapped))
-    # Dispatch on the built model, including wrapped models and renamed configurations.
-    if isinstance(model_unwrapped, CLAP):
-        task_cls = CLAPTask
-    elif args.distill:
-        task_cls = DistillCLIPTask
-    elif isinstance(model_unwrapped, (CoCa, MaMMUT)):
-        task_cls = CoCaTask
-    elif isinstance(model_unwrapped, NaFlexGenLap):
-        task_cls = GenLapTask
-    elif isinstance(model_unwrapped, NaFlexGenLip):
-        task_cls = GenLipTask
-    else:
-        task_cls = SigLIPTask if args.siglip else CLIPTask
-
-    options = {} if task_cls in (GenLipTask, GenLapTask) else dict(rank=args.rank, world_size=args.world_size)
-    if task_cls in (CLIPTask, CLAPTask, DistillCLIPTask, CoCaTask):
-        options.update(local_loss=args.local_loss, gather_with_grad=args.gather_with_grad,
-                       cache_labels=_use_loss_label_cache(args))
-    if task_cls in (CoCaTask, GenLipTask, GenLapTask):
-        options.update(
-            caption_z_loss_weight=getattr(args, 'caption_z_loss_weight', 0.0),
-            caption_loss_compute_dtype=getattr(args, 'caption_loss_compute_dtype', 'float32'),
-            caption_loss_chunk_size=getattr(args, 'caption_loss_chunk_size', 4096),
-        )
-    if task_cls is CoCaTask:
-        options.update(
-            caption_loss_weight=args.coca_caption_loss_weight,
-            clip_loss_weight=args.coca_contrastive_loss_weight,
-            fused_caption_loss=getattr(args, 'fused_caption_loss', False),
-        )
-    elif task_cls is SigLIPTask:
-        options.update(dist_impl=args.loss_dist_impl, chunk_size=getattr(args, 'siglip_chunk_size', 0))
-    task = (task_cls(model, dist_model, **options) if task_cls is DistillCLIPTask
-            else task_cls(model, **options))
-    if naflex_data_config is not None:
-        # Every task carries the NaFlex data policy via the base TrainingTask (image-text and audio-text alike).
-        task.set_naflex_data_config(naflex_data_config)
-    return task
-
-
-def _with_naflex_aug_cfg(aug_cfg):
-    """Return ``aug_cfg`` with the timm NaFlex transform pipeline enabled (dict, AugmentationCfg, or None)."""
-    if aug_cfg is None:
-        return {'use_timm': True, 'naflex': True}
-    if isinstance(aug_cfg, dict):
-        return {**aug_cfg, 'use_timm': True, 'naflex': True}
-    from dataclasses import replace as _replace
-    return _replace(aug_cfg, use_timm=True, naflex=True)
-
-
 def _build_preprocess(model, *, aug_cfg=None, audio_aug_cfg=None):
     """Return ``(preprocess_train, preprocess_val)`` for the model's modality.
 
@@ -1219,28 +1024,6 @@ def _build_preprocess(model, *, aug_cfg=None, audio_aug_cfg=None):
     ``.audio`` nor ``.visual``, so it would otherwise crash the image branch. Shared by
     ``create_model_and_transforms`` and ``create_model_from_pretrained``.
     """
-    traits = get_model_traits(model)
-    if traits.family is ModelFamily.GENLAP:
-        from .audio.naflex_audio import AudioNaFlexTransformFactory
-
-        factory = AudioNaFlexTransformFactory(model.audio_cfg, pack_prefix=getattr(model, 'pack_prefix', False))
-        return factory, factory
-    if traits.audio_input is InputMode.NAFLEX:
-        # NaFlexClap: CLAP with a NaFlex spectrogram-ViT audio tower -> NaFlex patchify transform (not HTSAT).
-        from .audio.naflex_audio import AudioNaFlexCfg, AudioNaFlexTransformFactory
-
-        factory = AudioNaFlexTransformFactory(AudioNaFlexCfg.from_clip_audio_cfg(model.audio.cfg))
-        return factory, factory
-    if traits.audio_input is not InputMode.NONE:
-        from .audio.transform import audio_transform_v2
-
-        return (
-            audio_transform_v2(model.audio.cfg, is_train=True, audio_aug_cfg=audio_aug_cfg),
-            audio_transform_v2(model.audio.cfg, is_train=False, audio_aug_cfg=audio_aug_cfg),
-        )
-    if traits.requires_naflex_data:
-        # GenLIP requires both flags, even when the caller supplied naflex=True without use_timm=True.
-        aug_cfg = _with_naflex_aug_cfg(aug_cfg)
     pp_cfg = PreprocessCfg(**model.visual.preprocess_cfg)
     preprocess_train = image_transform_v2(pp_cfg, is_train=True, aug_cfg=aug_cfg)
     if is_naflex_aug_cfg(aug_cfg):
