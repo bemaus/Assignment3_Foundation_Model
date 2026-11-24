@@ -1,0 +1,86 @@
+{
+  "run_name": "clip_projection",
+  "model": {
+    "name": "convnext_base",
+    "pretrained": "laion400m_s13b_b51k"
+  },
+  "projection": {
+    "enabled": true,
+    "epochs": 300,
+    "lr": 0.001,
+    "temperature": 0.07,
+    "identity_weight": 1.0
+  },
+  "support_images": {
+    "Bedroom": "data/train/Bedroom/image_0111.jpg",
+    "Coast": "data/train/Coast/image_0238.jpg",
+    "Flower": "data/train/Flower/image_0061.jpg",
+    "Forest": "data/train/Forest/image_0067.jpg",
+    "Highway": "data/train/Highway/image_0202.jpg",
+    "Industrial": "data/train/Industrial/image_0235.jpg",
+    "InsideCity": "data/train/InsideCity/image_0169.jpg",
+    "Kitchen": "data/train/Kitchen/image_0078.jpg",
+    "LivingRoom": "data/train/LivingRoom/image_0211.jpg",
+    "Mountain": "data/train/Mountain/image_0180.jpg",
+    "Office": "data/train/Office/image_0215.jpg",
+    "OpenCountry": "data/train/OpenCountry/image_0056.jpg",
+    "Store": "data/train/Store/image_0244.jpg",
+    "Street": "data/train/Street/image_0036.jpg",
+    "Suburb": "data/train/Suburb/image_0073.jpg",
+    "TallBuilding": "data/train/TallBuilding/image_0036.jpg"
+  },
+  "splits": {
+    "test": {
+      "n_images": 400,
+      "accuracy": {
+        "text-only": 0.9025,
+        "image-only": 0.7975,
+        "combined": 0.8975
+      },
+      "per_class_accuracy": {
+        "Bedroom": 1.0,
+        "Coast": 1.0,
+        "Flower": 1.0,
+        "Forest": 0.92,
+        "Highway": 1.0,
+        "Industrial": 0.92,
+        "InsideCity": 0.36,
+        "Kitchen": 1.0,
+        "LivingRoom": 0.96,
+        "Mountain": 0.96,
+        "Office": 0.92,
+        "OpenCountry": 0.68,
+        "Store": 0.96,
+        "Street": 0.68,
+        "Suburb": 1.0,
+        "TallBuilding": 1.0
+      }
+    },
+    "train": {
+      "n_images": 2384,
+      "accuracy": {
+        "text-only": 0.8955536912751678,
+        "image-only": 0.7919463087248322,
+        "combined": 0.8901006711409396
+      },
+      "per_class_accuracy": {
+        "Bedroom": 0.9865771812080537,
+        "Coast": 0.9664429530201343,
+        "Flower": 1.0,
+        "Forest": 0.8187919463087249,
+        "Highway": 0.9328859060402684,
+        "Industrial": 0.8926174496644296,
+        "InsideCity": 0.5637583892617449,
+        "Kitchen": 0.9932885906040269,
+        "LivingRoom": 0.8389261744966443,
+        "Mountain": 0.9932885906040269,
+        "Office": 0.9463087248322147,
+        "OpenCountry": 0.6308724832214765,
+        "Store": 0.959731543624161,
+        "Street": 0.8053691275167785,
+        "Suburb": 1.0,
+        "TallBuilding": 0.912751677852349
+      }
+    }
+  }
+}
