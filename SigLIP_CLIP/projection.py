@@ -1,5 +1,4 @@
 import argparse
-import json
 import sys
 import time
 from pathlib import Path
@@ -9,7 +8,7 @@ import torch
 import torch.nn.functional as F
 import yaml
 from PIL import Image
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, confusion_matrix
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
@@ -18,7 +17,7 @@ from train import (ROOT, apply_projection, embed_images, embed_texts, get_device
                    load_config, load_prompts, pick_support_images, train_projection)
 import open_clip
 from augmentations import AUGMENTATIONS
-from evaluation import load_split, save_confusion_matrix
+from evaluation import load_split
 
 KINDS = ["text-only", "image-only", "combined"]
 
@@ -104,7 +103,6 @@ def evaluate(cfg, model, preprocess, tokenizer, device):
     ck = build_prototypes(cfg, model, preprocess, tokenizer, device)
     classes = ck["classes"]
     exclude = set(ck["support_images"].values())
-    out = ROOT / cfg["output_dir"] / cfg["run_name"]
 
     results = {"run_name": cfg["run_name"], "model": cfg["model"], "projection": cfg.get("projection"),
                "support_images": ck["support_images"], "splits": {}}
@@ -114,20 +112,15 @@ def evaluate(cfg, model, preprocess, tokenizer, device):
         labels, preds = predict(cfg, model, preprocess, device, items, ck)
         print(f"evaluated {split}: {len(items)} images in {time.time() - start:.0f}s")
 
-        cm = save_confusion_matrix(labels, preds["combined"], classes,
-                                   f"{cfg['run_name']} | {split} | combined: "
-                                   f"{accuracy_score(labels, preds['combined']):.1%}",
-                                   out / f"confusion_{split}.png")
+        cm = confusion_matrix(labels, preds["combined"], labels=range(len(classes)))
         results["splits"][split] = {
             "n_images": len(items),
             "accuracy": {k: float(accuracy_score(labels, preds[k])) for k in KINDS},
             "per_class_accuracy": {c: float(cm[i, i] / cm[i].sum()) for i, c in enumerate(classes)},
         }
 
-    with open(out / "results.json", "w") as f:
-        json.dump(results, f, indent=2)
     print_run_results(results, classes)
-    print(f"saved results to {out.relative_to(ROOT)}/")
+    print(f"saved prototypes to {cfg['output_dir']}/{cfg['run_name']}/prototypes.pt")
     return results
 
 
