@@ -1,0 +1,28 @@
+run_name: clip_all_prompts_aug
+
+model:
+  name: convnext_base
+  pretrained: laion400m_s13b_b51k
+
+data:
+  train_dir: data/train
+  eval_splits:
+    test: data/test
+    train: data/train
+
+prompts_file: SigLIP_CLIP/prompts.yaml
+prompt_groups: [specific, general, social, social_general]
+
+train:
+  seed: 0
+  include_original: true
+  augment: true
+  image_weight: 0.5
+
+projection:
+  enabled: false
+
+eval:
+  batch_size: 32
+
+output_dir: SigLIP_CLIP/models

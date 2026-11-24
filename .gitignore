@@ -1,11 +1,8 @@
-# Python virtual environment
 clip/
 .venv/
 
-# Python caches
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
 
-# macOS
 .DS_Store

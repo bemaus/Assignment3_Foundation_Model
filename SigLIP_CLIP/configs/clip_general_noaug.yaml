@@ -1,0 +1,28 @@
+run_name: clip_general_noaug
+
+model:
+  name: convnext_base
+  pretrained: laion400m_s13b_b51k
+
+data:
+  train_dir: data/train
+  eval_splits:
+    test: data/test
+    train: data/train
+
+prompts_file: SigLIP_CLIP/prompts.yaml
+prompt_templates: ["a photo of a {}"]
+
+train:
+  seed: 0
+  include_original: true
+  augment: false
+  image_weight: 0.5
+
+projection:
+  enabled: false
+
+eval:
+  batch_size: 32
+
+output_dir: SigLIP_CLIP/models

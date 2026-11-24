@@ -1,29 +1,9 @@
-"""Train and evaluate one or more one-shot runs, each described by a YAML config.
-
-For every config:
-  1. Run train.py's vector averaging to build the 16 class prototypes
-     (training the projection first if the config turns it on).
-  2. Embed every image in each evaluation split (the one-shot images are left out).
-  3. Predict the class whose prototype is most similar (cosine similarity).
-  4. Print and save the results to <output_dir>/<run_name>/:
-       results.json                    accuracy per split and per class
-       confusion_<split>.png           confusion matrix of the combined prototype
-
-Accuracy is reported for three prototypes, so you can see what each half contributes:
-  text-only   average of the 10 prompt vectors
-  image-only  average of the augmented one-shot image vectors
-  combined    the averaged image + text vector (the method itself)
-
-Usage (from the repository root):
-    python ConvNeXt_2800/evaluation.py ConvNeXt_2800/configs/oneshot_seed0.yaml
-    python ConvNeXt_2800/evaluation.py ConvNeXt_2800/configs/*.yaml     # several runs + summary table
-"""
 import argparse
 import json
 import time
 
 import matplotlib
-matplotlib.use("Agg")                   # save figures to files instead of opening windows
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -36,7 +16,6 @@ PROTOTYPE_KINDS = {"text-only": "text_prototypes", "image-only": "image_prototyp
 
 
 def load_split(split_dir, classes, exclude):
-    """All (path, label) pairs in a split, minus the one-shot support images."""
     items = []
     for label, c in enumerate(classes):
         for p in list_images(split_dir / c):
@@ -47,14 +26,13 @@ def load_split(split_dir, classes, exclude):
 
 @torch.no_grad()
 def predict(model, preprocess, device, items, checkpoint, batch_size):
-    """Returns the true labels and, for each prototype kind, the predicted labels."""
     protos = {kind: checkpoint[key].to(device) for kind, key in PROTOTYPE_KINDS.items()}
     projection = checkpoint.get("projection")
     preds = {kind: [] for kind in protos}
     for i in range(0, len(items), batch_size):
         batch = items[i:i + batch_size]
         feats = embed_images(model, preprocess, [Image.open(p).convert("RGB") for p, _ in batch], device)
-        if projection is not None:      # prototypes live in the projected space, so test images must too
+        if projection is not None:
             feats = apply_projection(feats, projection)
         for kind, P in protos.items():
             preds[kind].append((feats @ P.T).argmax(dim=-1).cpu())
@@ -134,7 +112,7 @@ def main():
     device = get_device()
     print("device:", device)
 
-    loaded, all_results = {}, []                # reuse the model when configs share it
+    loaded, all_results = {}, []
     for path in args.configs:
         cfg = load_config(path)
         key = (cfg["model"]["name"], cfg["model"]["pretrained"])

@@ -1,10 +1,3 @@
-"""The 10 image augmentations applied to each one-shot image.
-
-Each one works on a PIL image and returns a PIL image, so the model's own
-preprocessing (resize, crop, normalize) is applied afterwards as usual.
-They are mild on purpose: every view should still clearly show the same scene.
-Most classes are grayscale, so there are no hue or saturation changes.
-"""
 from torchvision import transforms as T
 
 AUGMENTATIONS = {
