@@ -6,7 +6,7 @@ This project tests how pretrained foundation models (CLIP and SigLIP) classify s
 
 ## Setup
 
-Install the requirements (a virtual environment is recommended):
+Install the requirements:
 
 ```bash
 python3 -m venv .venv
@@ -36,17 +36,9 @@ For example:
 python SigLIP_CLIP/evaluation.py SigLIP_CLIP/configs/clip_projection.yaml
 ```
 
-Several configs can be run at once by listing them one after another:
-
-```bash
-python SigLIP_CLIP/evaluation.py SigLIP_CLIP/configs/clip_projection.yaml SigLIP_CLIP/configs/siglip_projection.yaml
-```
-
 ## Running evaluation.py
 
-The file builds the class prototypes from one image per class and the text prompts, then tests them on the train and test images. Accuracy (text-only, image-only and combined) and per-class accuracy are printed in the terminal. The prototypes, confusion matrices and a `results.json` file are saved to `SigLIP_CLIP/models/<run_name>/`. No pop-up windows are opened.
-
-Pretrained weights are downloaded automatically the first time a model is loaded.
+The file builds the class prototypes from one image per class and the text prompts, then tests them on the train and test images.
 
 ## Final Results Can Be Found in model_comparison.ipynb
 
